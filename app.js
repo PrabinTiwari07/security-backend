@@ -22,6 +22,8 @@ const { protect } = require('./middleware/authMiddleware');
 const profileRoutes = require('./routes/profileRoutes');
 const { checkPasswordExpiry } = require('./utils/passwordExpiry');
 const { cleanExpiredSessions } = require('./utils/sessionManager');
+const serviceRoutes = require('./routes/serviceRoutes');
+const vehicleRoutes = require('./routes/vehicleRoutes');
 
 dotenv.config();
 const app = express();
@@ -105,8 +107,9 @@ app.use(cookieParser());
 app.use('/api/users', userRoutes);
 // app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
-const vehicleRoutes = require('./routes/vehicleRoutes');
 app.use('/api/vehicles', vehicleRoutes);
+
+app.use('/api/services', serviceRoutes);
 
 // XSS Testing Route (Development Only)
 if (process.env.NODE_ENV === 'development') {
