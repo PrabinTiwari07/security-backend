@@ -1,26 +1,3 @@
-// const mongoose = require('mongoose');
-
-// const profileSchema = new mongoose.Schema({
-//     user: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'User',
-//         required: true,
-//         unique: true
-//     },
-//     bio: { type: String, default: '' },
-//     gender: { type: String, enum: ['Male', 'Female', 'Other'], default: 'Other' },
-//     dob: { type: Date },
-//     profileImage: { type: String, default: '' }, // e.g., /uploads/profile123.jpg
-//     socialLinks: {
-//         facebook: { type: String },
-//         instagram: { type: String },
-//         linkedin: { type: String },
-//     }
-// }, { timestamps: true });
-
-// module.exports = mongoose.model('Profile', profileSchema);
-
-
 const mongoose = require('mongoose');
 
 const profileSchema = new mongoose.Schema({
@@ -47,7 +24,6 @@ const profileSchema = new mongoose.Schema({
         default: ''
     },
 
-    // License Information
     license: {
         licenseNumber: {
             type: String,

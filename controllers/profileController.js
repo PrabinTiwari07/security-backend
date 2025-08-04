@@ -2,7 +2,6 @@
 const Profile = require('../model/profile');
 const User = require('../model/user');
 
-// Get user profile
 exports.getProfile = async (req, res) => {
     try {
         const user = req.user;
@@ -40,7 +39,6 @@ exports.getProfile = async (req, res) => {
     }
 };
 
-// Update user profile (including license information)
 exports.updateProfile = async (req, res) => {
     try {
         console.log('FILES:', req.files);
@@ -48,19 +46,16 @@ exports.updateProfile = async (req, res) => {
 
         const updates = { ...req.body };
 
-        // Handle profile image upload
         if (req.files && req.files.profileImage) {
             updates.profileImage = `/uploads/${req.files.profileImage[0].filename}`;
         }
 
-        // Handle license image upload
         if (req.files && req.files.licenseImage) {
             updates['license.licenseImage'] = `/uploads/${req.files.licenseImage[0].filename}`;
             updates['license.uploadedAt'] = new Date();
-            updates['license.status'] = 'pending'; // Reset status when new license is uploaded
+            updates['license.status'] = 'pending';
         }
 
-        // Handle license fields
         if (req.body.licenseNumber) {
             updates['license.licenseNumber'] = req.body.licenseNumber;
         }
@@ -71,14 +66,12 @@ exports.updateProfile = async (req, res) => {
             updates['license.expiryDate'] = new Date(req.body.licenseExpiryDate);
         }
 
-        // Update profile
         const profile = await Profile.findOneAndUpdate(
             { user: req.user._id },
             updates,
             { new: true, upsert: true }
         );
 
-        // Update user basic info
         const userUpdates = {};
         if (updates.fullName) userUpdates.fullName = updates.fullName;
         if (updates.address) userUpdates.address = updates.address;
@@ -96,15 +89,13 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-// Admin: Update license status with detailed logging
 exports.updateLicenseStatus = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { status } = req.body; // 'verified', 'rejected', 'pending'
+        const { status } = req.body;
 
         console.log(`Admin ${req.user._id} updating license status for user ${userId} to ${status}`);
 
-        // Validate status
         if (!['pending', 'verified', 'rejected'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status. Must be pending, verified, or rejected.' });
         }
@@ -113,11 +104,9 @@ exports.updateLicenseStatus = async (req, res) => {
             'license.status': status
         };
 
-        // Add verification timestamp for verified status
         if (status === 'verified') {
             updateData['license.verifiedAt'] = new Date();
         } else if (status === 'rejected') {
-            // Clear verification date if rejecting
             updateData['license.verifiedAt'] = null;
         }
 
@@ -153,7 +142,6 @@ exports.updateLicenseStatus = async (req, res) => {
     }
 };
 
-// Admin: Get all profiles with license information and filtering
 exports.getAllProfiles = async (req, res) => {
     try {
         const { status, search } = req.query;
@@ -162,7 +150,6 @@ exports.getAllProfiles = async (req, res) => {
 
         let query = {};
 
-        // Filter by license status if provided
         if (status && status !== 'all') {
             query['license.status'] = status;
         }
@@ -171,7 +158,6 @@ exports.getAllProfiles = async (req, res) => {
             .populate('user', 'fullName email phone address role firstName lastName')
             .sort({ 'license.uploadedAt': -1 });
 
-        // Apply search filter if provided
         if (search) {
             const searchLower = search.toLowerCase();
             profiles = profiles.filter(profile => {
@@ -205,7 +191,6 @@ exports.getAllProfiles = async (req, res) => {
     }
 };
 
-// Admin: Get license statistics
 exports.getLicenseStats = async (req, res) => {
     try {
         const stats = await Profile.aggregate([
