@@ -100,7 +100,6 @@ const getActivityStats = async (req, res) => {
 
         const query = dateFilter ? { createdAt: dateFilter } : {};
 
-        // Activity counts by action
         const actionStats = await Activity.aggregate([
             { $match: query },
             { $group: { _id: '$action', count: { $sum: 1 } } },
