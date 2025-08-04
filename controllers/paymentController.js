@@ -1,11 +1,9 @@
 const axios = require('axios');
 const crypto = require('crypto');
-// const { KHALTI_SECRET_KEY, KHALTI_PUBLIC_KEY } = process.env;
-// 🔑 Your actual Khalti keys
+
 const KHALTI_SECRET_KEY = '357156b0d96043a8a78df09467726289';
 const KHALTI_PUBLIC_KEY = 'a4caabe9ab994f23b5008eac64e5d154';
 
-// 🚀 KPG-2 Step 1: INITIATE Khalti Payment
 exports.initiateKhaltiPayment = async (req, res) => {
     try {
         const {
@@ -21,14 +19,13 @@ exports.initiateKhaltiPayment = async (req, res) => {
         const khaltiPayload = {
             return_url,
             website_url,
-            amount, // amount in paisa
+            amount,
             purchase_order_id,
             purchase_order_name,
             customer_info,
             amount_breakdown
         };
 
-        // console.log('🔄 Initiating Khalti Payment with real keys:', khaltiPayload);
 
         const response = await axios.post('https://a.khalti.com/api/v2/epayment/initiate/', khaltiPayload, {
             headers: {
@@ -37,7 +34,6 @@ exports.initiateKhaltiPayment = async (req, res) => {
             }
         });
 
-        // console.log('✅ Khalti Response:', response.data);
 
         if (response.data && response.data.payment_url) {
             res.json({
@@ -53,7 +49,7 @@ exports.initiateKhaltiPayment = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('❌ Khalti initiation error:', error.response?.data || error.message);
+        console.error('Khalti initiation error:', error.response?.data || error.message);
         res.status(500).json({
             success: false,
             message: error.response?.data?.message || 'Failed to initialize payment',
@@ -62,7 +58,6 @@ exports.initiateKhaltiPayment = async (req, res) => {
     }
 };
 
-// 🔍 KPG-2 Step 4: VERIFY Payment
 exports.verifyKhaltiPayment = async (req, res) => {
     try {
         const { pidx } = req.body;
@@ -74,7 +69,6 @@ exports.verifyKhaltiPayment = async (req, res) => {
             });
         }
 
-        // console.log('🔍 Verifying Khalti Payment with pidx:', pidx);
 
         const response = await axios.post('https://a.khalti.com/api/v2/epayment/lookup/',
             { pidx },
@@ -86,7 +80,6 @@ exports.verifyKhaltiPayment = async (req, res) => {
             }
         );
 
-        // console.log('✅ Khalti Verification Response:', response.data);
 
         if (response.data) {
             res.json({
@@ -103,7 +96,7 @@ exports.verifyKhaltiPayment = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('❌ Khalti verification error:', error.response?.data || error.message);
+        console.error('Khalti verification error:', error.response?.data || error.message);
         res.status(500).json({
             success: false,
             message: 'Failed to verify payment',
@@ -112,7 +105,6 @@ exports.verifyKhaltiPayment = async (req, res) => {
     }
 };
 
-// Get payment status (helper endpoint)
 exports.getPaymentStatus = async (req, res) => {
     try {
         const { pidx } = req.params;
