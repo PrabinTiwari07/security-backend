@@ -2,11 +2,11 @@ const User = require('../model/user');
 const bcrypt = require('bcrypt');
 const sendOtpEmail = require('../utils/sendOtpEmail');
 const jwt = require('jsonwebtoken');
-const Profile = require('../model/profile'); // add this import
+const Profile = require('../model/profile');
 const { createSession, invalidateSession, invalidateAllUserSessions, getUserActiveSessions } = require('../utils/sessionManager');
 const { sanitizeString, sanitizeObject } = require('../middleware/xssProtection');
 const { logActivity, logSecurityEvent } = require('../middleware/activityLogger');
-const axios = require('axios'); // Add at the top
+const axios = require('axios');
 
 
 exports.registerUser = async (req, res) => {
@@ -15,11 +15,9 @@ exports.registerUser = async (req, res) => {
 
         const { fullName, address, phone, email, password, confirmPassword, captchaToken } = req.body;
 
-        // Verify CAPTCHA
         if (!captchaToken) {
             return res.status(400).json({ message: "CAPTCHA is required." });
         }
-        // Use the secret key that matches your frontend site key!
         const secretKey = "6LfKjpMrAAAAAORZufSH_hIilnUFfJBtA2PowNES";
         const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`;
         try {
@@ -65,7 +63,7 @@ exports.registerUser = async (req, res) => {
         }
 
         const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-        const otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000); // OTP expires in 2 minutes
+        const otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = new User({
@@ -87,7 +85,6 @@ exports.registerUser = async (req, res) => {
 
         await sendOtpEmail({ email, name: fullName, otp: otpCode });
 
-        // Log successful registration
         await logActivity(
             newUser._id,
             newUser.username || newUser.email,
@@ -100,7 +97,6 @@ exports.registerUser = async (req, res) => {
 
         res.status(201).json({ message: "Registration successful, OTP sent to your email." });
     } catch (error) {
-        // Log failed registration
         await logSecurityEvent(
             'REGISTER',
             `Failed registration attempt: ${req.body.email}`,
@@ -154,7 +150,7 @@ exports.resendOtp = async (req, res) => {
         }
 
         const newOtp = Math.floor(1000 + Math.random() * 9000).toString();
-        const otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+        const otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
 
         user.otpCode = newOtp;
         user.otpExpiresAt = otpExpiresAt;
@@ -203,7 +199,7 @@ exports.forgotPassword = async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found." });
 
         const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-        const otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 min
+        const otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
 
         user.otpCode = otpCode;
         user.otpExpiresAt = otpExpiresAt;
@@ -240,12 +236,10 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ message: "Password must be at least 6 characters." });
         }
 
-        // Check if password was used recently (password reuse prevention)
         if (user.isPasswordReused(newPassword, bcrypt)) {
             return res.status(400).json({ message: "You cannot reuse your current password. Please choose a different password." });
         }
 
-        // Add current password to history before updating
         user.addPasswordToHistory(user.password);
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -253,8 +247,8 @@ exports.resetPassword = async (req, res) => {
         user.otpCode = null;
         user.otpExpiresAt = null;
         user.lastPasswordChange = new Date();
-        user.passwordExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-        user.mustChangePassword = false; // Reset flag if it was set
+        user.passwordExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        user.mustChangePassword = false;
 
         await user.save();
 
@@ -292,33 +286,28 @@ exports.changePassword = async (req, res) => {
             return res.status(400).json({ message: "Password must be at least 6 characters." });
         }
 
-        // Check if new password is same as current password
         const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
         if (isSameAsCurrent) {
             return res.status(400).json({ message: "New password cannot be the same as current password." });
         }
 
-        // Check if password was used recently (password reuse prevention)
         if (user.isPasswordReused(newPassword, bcrypt)) {
             return res.status(400).json({ message: "You cannot reuse your current password. Please choose a different password." });
         }
 
-        // Add current password to history before updating
         user.addPasswordToHistory(user.password);
 
         const hashedNewPassword = await bcrypt.hash(newPassword, 10);
         user.password = hashedNewPassword;
         user.lastPasswordChange = new Date();
-        user.passwordExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-        user.mustChangePassword = false; // Reset flag if it was set
+        user.passwordExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        user.mustChangePassword = false;
 
         await user.save();
-
-        // Log password change activity
         await logActivity(
             user._id,
             user.username || user.email,
-            'PASSWORD_CHANGE', // changed from 'CHANGE_PASSWORD'
+            'PASSWORD_CHANGE',
             'User changed password',
             req,
             'MEDIUM',
@@ -334,7 +323,6 @@ exports.changePassword = async (req, res) => {
     }
 };
 
-// Get password status for current user
 exports.getPasswordStatus = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -356,20 +344,16 @@ exports.getPasswordStatus = async (req, res) => {
     }
 };
 
-// Logout user from current session
 exports.logoutUser = async (req, res) => {
     try {
         const sessionId = req.sessionData.sessionId;
         const userId = req.user._id;
 
-        // Invalidate current session
         await invalidateSession(sessionId, userId);
 
-        // Clear cookies
         res.clearCookie('authToken');
         res.clearCookie('sessionInfo');
 
-        // Log logout activity
         await logActivity(
             req.user._id,
             req.user.username || req.user.email,
@@ -390,15 +374,12 @@ exports.logoutUser = async (req, res) => {
     }
 };
 
-// Logout user from all sessions
 exports.logoutAllSessions = async (req, res) => {
     try {
         const userId = req.user._id;
 
-        // Invalidate all user sessions
         await invalidateAllUserSessions(userId);
 
-        // Clear cookies
         res.clearCookie('authToken');
         res.clearCookie('sessionInfo');
 
@@ -412,7 +393,6 @@ exports.logoutAllSessions = async (req, res) => {
     }
 };
 
-// Get user's active sessions
 exports.getActiveSessions = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -440,14 +420,12 @@ exports.getActiveSessions = async (req, res) => {
     }
 };
 
-// End specific session
 exports.endSession = async (req, res) => {
     try {
         const { sessionId } = req.params;
         const userId = req.user._id;
         const currentSessionId = req.sessionData.sessionId;
 
-        // Prevent user from ending their current session (use logout instead)
         if (sessionId === currentSessionId) {
             return res.status(400).json({
                 message: "Cannot end current session. Use logout instead."
@@ -474,13 +452,13 @@ exports.endSession = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
     try {
-        const { email, password, rememberMe = false } = req.body;
+        const { email, password } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({ message: "Email and password are required." });
         }
 
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email }).select('+password +mfaEnabled +mfaSecret');
 
         if (!user) {
             await logSecurityEvent(
@@ -506,14 +484,39 @@ exports.loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Generate token and successful login
+        if (user.mfaEnabled) {
+            const token = jwt.sign(
+                { userId: user._id, email: user.email, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+
+            );
+
+            req.session.pendingMfaUser = {
+                message: 'Login successful (requires MFA)',
+                requireMFA: true,
+                user: {
+                    id: user._id,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role
+                },
+                token
+            };
+
+            return res.json({
+                message: 'MFA verification required',
+                requireMFA: true,
+                email: user.email
+            });
+        }
+
         const token = jwt.sign(
             { userId: user._id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
-        // Log successful login
         await logActivity(
             user._id,
             user.username || user.email,
