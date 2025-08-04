@@ -1,6 +1,5 @@
 const Vehicle = require('../model/vehicle');
 
-// ✅ Add vehicle
 exports.addVehicle = async (req, res) => {
     try {
         const {
@@ -36,7 +35,6 @@ exports.addVehicle = async (req, res) => {
     }
 };
 
-// ✅ Get available vehicles for users
 exports.getAvailableVehicles = async (req, res) => {
     try {
         const vehicles = await Vehicle.find({ isBooked: false });
@@ -46,7 +44,6 @@ exports.getAvailableVehicles = async (req, res) => {
     }
 };
 
-// ✅ Get all vehicles for admin
 exports.getAllVehicles = async (req, res) => {
     try {
         const vehicles = await Vehicle.find();
@@ -56,7 +53,6 @@ exports.getAllVehicles = async (req, res) => {
     }
 };
 
-// ✅ Delete a vehicle
 exports.deleteVehicle = async (req, res) => {
     try {
         await Vehicle.findByIdAndDelete(req.params.id);
@@ -66,7 +62,6 @@ exports.deleteVehicle = async (req, res) => {
     }
 };
 
-// ✅ Toggle vehicle booked status
 exports.toggleBookedStatus = async (req, res) => {
     try {
         const vehicle = await Vehicle.findById(req.params.id);
@@ -82,7 +77,6 @@ exports.toggleBookedStatus = async (req, res) => {
     }
 };
 
-// ✅ Update vehicle
 exports.updateVehicle = async (req, res) => {
     try {
         const vehicle = await Vehicle.findById(req.params.id);
@@ -122,7 +116,6 @@ exports.updateVehicle = async (req, res) => {
     }
 };
 
-// ✅ Get vehicle by ID
 exports.getVehicleById = async (req, res) => {
     try {
         const vehicle = await Vehicle.findById(req.params.id);
