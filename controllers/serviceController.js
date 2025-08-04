@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
-const Service = require('../model/service'); // Fixed path to use 'model' not 'models'
+const Service = require('../model/service');
 
 
-// ADMIN: Create Service
 exports.createService = async (req, res) => {
     try {
         const service = new Service(req.body);
@@ -13,7 +12,6 @@ exports.createService = async (req, res) => {
     }
 };
 
-// ADMIN: Update Service
 exports.updateService = async (req, res) => {
     try {
         const {
@@ -58,7 +56,6 @@ exports.updateService = async (req, res) => {
     }
 };
 
-// ADMIN: Delete Service
 exports.deleteService = async (req, res) => {
     try {
         const deletedService = await Service.findByIdAndDelete(req.params.id);
@@ -72,7 +69,6 @@ exports.deleteService = async (req, res) => {
     }
 };
 
-// PUBLIC (USER): Get All Services
 exports.getAllServices = async (req, res) => {
     try {
         const services = await Service.find();
@@ -82,7 +78,6 @@ exports.getAllServices = async (req, res) => {
     }
 };
 
-// PUBLIC (USER): Get Single Service
 exports.getServiceById = async (req, res) => {
     try {
         const service = await Service.findById(req.params.id);
@@ -93,7 +88,6 @@ exports.getServiceById = async (req, res) => {
     }
 };
 
-// Vehicle Booking Schema
 const vehicleBookingSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
@@ -126,10 +120,9 @@ const vehicleBookingSchema = new mongoose.Schema({
 
 const VehicleBooking = mongoose.model('VehicleBooking', vehicleBookingSchema);
 
-// Create a new vehicle rental booking
 exports.createVehicleBooking = async (req, res) => {
     try {
-        const userId = req.user.id || req.user._id; // Handle both formats
+        const userId = req.user.id || req.user._id;
 
         const {
             vehicle,
@@ -153,10 +146,9 @@ exports.createVehicleBooking = async (req, res) => {
             notes
         } = req.body;
 
-        console.log('📝 Creating vehicle booking for user:', userId);
-        console.log('📝 Booking data:', req.body);
+        console.log('Creating vehicle booking for user:', userId);
+        console.log('Booking data:', req.body);
 
-        // Validate required fields
         if (!vehicle || !vehicleName || !pickupLocation || !dropoffLocation ||
             !pickupDate || !dropoffDate || !pickupTime || !dropoffTime ||
             !totalDays || !totalPrice || !paymentMethod || !rentalType) {
@@ -166,7 +158,6 @@ exports.createVehicleBooking = async (req, res) => {
             });
         }
 
-        // Create booking
         const booking = new VehicleBooking({
             user: userId,
             vehicle,
@@ -191,7 +182,7 @@ exports.createVehicleBooking = async (req, res) => {
         });
 
         await booking.save();
-        console.log('✅ Vehicle booking created successfully:', booking._id);
+        console.log('Vehicle booking created successfully:', booking._id);
 
         res.status(201).json({
             success: true,
@@ -200,7 +191,7 @@ exports.createVehicleBooking = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error creating vehicle booking:', error);
+        console.error('Error creating vehicle booking:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to create booking',
@@ -209,7 +200,6 @@ exports.createVehicleBooking = async (req, res) => {
     }
 };
 
-// Get all bookings for a user
 exports.getUserVehicleBookings = async (req, res) => {
     try {
         const userId = req.user.id || req.user._id;
@@ -225,7 +215,7 @@ exports.getUserVehicleBookings = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error fetching user vehicle bookings:', error);
+        console.error('Error fetching user vehicle bookings:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch bookings',
@@ -234,7 +224,6 @@ exports.getUserVehicleBookings = async (req, res) => {
     }
 };
 
-// Get a specific booking by ID
 exports.getVehicleBookingById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -257,7 +246,7 @@ exports.getVehicleBookingById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error fetching vehicle booking:', error);
+        console.error('Error fetching vehicle booking:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch booking',
@@ -266,7 +255,6 @@ exports.getVehicleBookingById = async (req, res) => {
     }
 };
 
-// Update booking status
 exports.updateVehicleBooking = async (req, res) => {
     try {
         const { id } = req.params;
@@ -281,7 +269,6 @@ exports.updateVehicleBooking = async (req, res) => {
             });
         }
 
-        // Update allowed fields
         if (status) booking.status = status;
         if (paymentStatus) booking.paymentStatus = paymentStatus;
         if (paymentInfo) booking.paymentInfo = { ...booking.paymentInfo, ...paymentInfo };
@@ -296,7 +283,7 @@ exports.updateVehicleBooking = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error updating vehicle booking:', error);
+        console.error('Error updating vehicle booking:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to update booking',
@@ -305,7 +292,6 @@ exports.updateVehicleBooking = async (req, res) => {
     }
 };
 
-// Cancel a booking
 exports.cancelVehicleBooking = async (req, res) => {
     try {
         const { id } = req.params;
@@ -336,7 +322,7 @@ exports.cancelVehicleBooking = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error cancelling vehicle booking:', error);
+        console.error('Error cancelling vehicle booking:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to cancel booking',
@@ -345,7 +331,6 @@ exports.cancelVehicleBooking = async (req, res) => {
     }
 };
 
-// ADMIN: Get all vehicle bookings
 exports.getAllVehicleBookings = async (req, res) => {
     try {
         const { status, paymentStatus, page = 1, limit = 10 } = req.query;
@@ -375,7 +360,7 @@ exports.getAllVehicleBookings = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error fetching all vehicle bookings:', error);
+        console.error('Error fetching all vehicle bookings:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch bookings',
@@ -384,7 +369,6 @@ exports.getAllVehicleBookings = async (req, res) => {
     }
 };
 
-// ADMIN: Update any booking
 exports.adminUpdateVehicleBooking = async (req, res) => {
     try {
         const { id } = req.params;
@@ -411,7 +395,7 @@ exports.adminUpdateVehicleBooking = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error updating vehicle booking (admin):', error);
+        console.error('Error updating vehicle booking (admin):', error);
         res.status(500).json({
             success: false,
             message: 'Failed to update booking',
@@ -420,7 +404,6 @@ exports.adminUpdateVehicleBooking = async (req, res) => {
     }
 };
 
-// ADMIN: Delete a booking
 exports.deleteVehicleBooking = async (req, res) => {
     try {
         const { id } = req.params;
@@ -439,7 +422,7 @@ exports.deleteVehicleBooking = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error deleting vehicle booking:', error);
+        console.error('Error deleting vehicle booking:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to delete booking',
